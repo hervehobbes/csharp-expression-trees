@@ -1,13 +1,10 @@
 ﻿namespace TitanicExplorer.Pages
 {
-    using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
-    using TitanicExplorer.Data;
     using System.IO;
-    using static TitanicExplorer.Data.Passenger;
     using System.Linq.Expressions;
-    using AgileObjects.ReadableExpressions;
-    using System.Linq.Dynamic.Core;
+    using TitanicExplorer.Data;
+    using static TitanicExplorer.Data.Passenger;
 
     public class IndexModel : PageModel
     {
@@ -38,7 +35,7 @@
 
         public void OnPost()
         {
-            var survived = Request.Form["survived"]!= "" ? ParseSurvived(Request.Form["survived"]) : null;
+            var survived = Request.Form["survived"] != "" ? ParseSurvived(Request.Form["survived"]) : null;
             var pClass = ParseNullInt(Request.Form["pClass"]);
             var sex = Request.Form["sex"] != "" ? ParseSex(Request.Form["sex"]) : null;
             var age = ParseNullDecimal(Request.Form["age"]);
@@ -50,55 +47,190 @@
 
         private IEnumerable<Passenger> FilterPassengers(bool? survived, int? pClass, SexValue? sex, decimal? age, decimal? minimumFare)
         {
-            Expression? currentExpression = null;
+            /*
+            Expression currentExpression = null;
+            // Le paramètre de la fonction qui va être construite
+            var passengerParameter = Expression.Parameter(typeof(Passenger), "passenger");
+            // Autre forme possible :
+            //var passengerParameter = Expression.Parameter(typeof(Passenger));
 
-            if (!string.IsNullOrEmpty(this.query))
+            if (survived is not null)
             {
-                var expr = DynamicExpressionParser.ParseLambda<Passenger, bool>(new ParsingConfig(), true, this.query);
-
-                var func = expr.Compile();
-
-                return this.Passengers.Where(func);
+                // Il faut la partie gauche et l'expression, `Survived`, l'opérateur `=` et la valeur avec laquelle comparer `True` ou `False`
+                // La valeur a comparer (la partie droite), True ou False
+                var survivedValue = Expression.Constant(survived.Value);
+                // Le champ, la propriété de la classe avec laquelle on fait la comparaison
+                // On a besoin de comparer la valeur de la propriété, la propriété `Survived`
+                // depuis mon paramètre (objet) `passenger`, je récupère la propriété `Survived`
+                var passengerSurvived = Expression.Property(passengerParameter, "Survived");
+                // (paramètre) Passenger.Survived(propriété) = survivedValue (valeur reçue de l'utilisateur)
+                // La propriété de la classe à utliser pour comparer et la valeur de comparaison
+                //var survivedEquals = Expression.Equal(passengerSurvived, survivedValue);
+                currentExpression = Expression.Equal(passengerSurvived, survivedValue);
+                // Et on crée l'expression avec la lambda
+                //var expr = Expression.Lambda<Func<Passenger, bool>>(survivedEquals, false, new List<ParameterExpression> { passengerParameter });
+                // On compile l'expression en une fonction
+                //var func = expr.Compile();
+                // Ancien code :
+                //this.Passengers = this.Passengers.Where(passenger => passenger.Survived == survived);
+                //this.Passengers = this.Passengers.Where(func);
             }
 
-            var passengerParameter = Expression.Parameter(typeof(Passenger));
-
-            if (survived != null)
+            if (pClass is not null)
             {
-                currentExpression = CreateExpression<bool>(survived.Value, null, "Survived", passengerParameter);
+                // La valeur à comparer, la partie droite
+                var pClassValue = Expression.Constant(pClass.Value);
+                // La propriété de notre paramètre sur laquelle portera le test
+                var passengerClassValue = Expression.Property(passengerParameter, "PClass");
+                var pClassEquals = Expression.Equal(passengerClassValue, pClassValue);
+                if (currentExpression is null)
+                {
+                    currentExpression = pClassEquals;
+                }
+                else
+                {
+                    var previousExpression = currentExpression;
+                    currentExpression = Expression.And(previousExpression, pClassEquals);
+                }
+                //var pClassExpr = Expression.Lambda<Func<Passenger, bool>>(pClassEquals, false, new List<ParameterExpression> { passengerParameter });
+                //var funcpClassExpr = pClassExpr.Compile();
+                //this.Passengers = this.Passengers.Where(passenger => passenger.PClass == pClass);
+                //this.Passengers = this.Passengers.Where(funcpClassExpr);
             }
 
-            if (pClass != null)
+            if (sex is not null)
             {
-                currentExpression = CreateExpression<int>(pClass.Value, currentExpression, "PClass", passengerParameter);
+                // La valeur à comparer, la partie droite
+                var pSexValueToCompare = Expression.Constant(sex.Value);
+                // La propriété de notre paramètre sur laquelle portera le test
+                var passengerSexProperty = Expression.Property(passengerParameter, "Sex");
+                // Le lien entre la propriété et la valeur de comparaison
+                var pSexEquals = Expression.Equal(passengerSexProperty, pSexValueToCompare);
+                if (currentExpression is null)
+                {
+                    currentExpression = pSexEquals;
+                }
+                else
+                {
+                    var previousExpression = currentExpression;
+                    currentExpression = Expression.And(previousExpression, pSexEquals);
+                }
+
+                //var pSexExpr = Expression.Lambda<Func<Passenger, bool>>(pSexEquals, false, new List<ParameterExpression> { passengerParameter });
+                //var funcSexExpr = pSexExpr.Compile();
+
+                //this.Passengers = this.Passengers.Where(passenger => passenger.Sex == sex);
+                //this.Passengers = this.Passengers.Where(funcSexExpr);
             }
 
-            if (sex != null)
+            if (age is not null)
             {
-                currentExpression = CreateExpression<SexValue>(sex.Value, currentExpression, "Sex", passengerParameter);
+                var pAgeValueToCompare = Expression.Constant(age.Value);
+                // La propriété de notre paramètre sur laquelle portera le test
+                var passengerAgeProperty = Expression.Property(passengerParameter, "Age");
+                // Le lien entre la propriété et la valeur de comparaison
+                var pAgeEquals = Expression.Equal(passengerAgeProperty, pAgeValueToCompare);
+                if (currentExpression is null)
+                {
+                    currentExpression = pAgeEquals;
+                }
+                else
+                {
+                    var previousExpression = currentExpression;
+                    currentExpression = Expression.And(previousExpression, pAgeEquals);
+                }
+
+                //var pAgeExpr = Expression.Lambda<Func<Passenger, bool>>(pAgeEquals, false, new List<ParameterExpression> { passengerParameter });
+                //var funcAgeExpr = pAgeExpr.Compile();
+
+                //this.Passengers = this.Passengers.Where(passenger => passenger.Age == age);
+                //this.Passengers = this.Passengers.Where(funcAgeExpr);
             }
 
-            if (age != null)
+            if (minimumFare is not null)
             {
-                currentExpression = CreateExpression<decimal>(age.Value, currentExpression, "Age", passengerParameter);
+                var pFareValueToCompare = Expression.Constant(minimumFare.Value);
+                // La propriété de notre paramètre sur laquelle portera le test
+                var passengerFareProperty = Expression.Property(passengerParameter, "Fare");
+                // Le lien entre la propriété et la valeur de comparaison
+                var pFareGreaterOrEqual = Expression.GreaterThanOrEqual(passengerFareProperty, pFareValueToCompare);
+                if (currentExpression is null)
+                {
+                    currentExpression = pFareGreaterOrEqual;
+                }
+                else
+                {
+                    var previousExpression = currentExpression;
+                    currentExpression = Expression.And(previousExpression, pFareGreaterOrEqual);
+                }
+
+                //var pFareExpr = Expression.Lambda<Func<Passenger, bool>>(pFareGreaterOrEqual, false, new List<ParameterExpression> { passengerParameter });
+                //var funcFareExpr = pFareExpr.Compile();
+
+                //this.Passengers = this.Passengers.Where(passenger => passenger.Fare >= minimumFare);
+                //this.Passengers = this.Passengers.Where(funcFareExpr);
             }
 
-            if (minimumFare != null)
+            if (currentExpression is not null)
             {
-                currentExpression = CreateExpression<decimal>(minimumFare.Value, currentExpression, "Fare", passengerParameter, ">");
-            }
-
-            if (currentExpression != null)
-            {
-                var expr = Expression.Lambda<Func<Passenger, bool>>(currentExpression, false, new List<ParameterExpression> { passengerParameter });
-                var func = expr.Compile();
-
-                this.query = expr.ToReadableString();
-
-                this.Passengers = this.Passengers.Where(func);
+                var globalLambdaExpr = Expression.Lambda<Func<Passenger, bool>>(currentExpression, false, new List<ParameterExpression> { passengerParameter });
+                var globalLambdaExprCompiled = globalLambdaExpr.Compile();
+                this.Passengers = this.Passengers.Where(globalLambdaExprCompiled);
             }
 
             return this.Passengers;
+
+            */
+
+            //Expression? currentExpression = null;
+
+            //if (!string.IsNullOrEmpty(this.query))
+            //{
+            //    var expr = DynamicExpressionParser.ParseLambda<Passenger, bool>(new ParsingConfig(), true, this.query);
+
+            //    var func = expr.Compile();
+
+            //    return this.Passengers.Where(func);
+            //}
+
+            //var passengerParameter = Expression.Parameter(typeof(Passenger));
+
+            //if (survived != null)
+            //{
+            //    currentExpression = CreateExpression<bool>(survived.Value, null, "Survived", passengerParameter);
+            //}
+
+            //if (pClass != null)
+            //{
+            //    currentExpression = CreateExpression<int>(pClass.Value, currentExpression, "PClass", passengerParameter);
+            //}
+
+            //if (sex != null)
+            //{
+            //    currentExpression = CreateExpression<SexValue>(sex.Value, currentExpression, "Sex", passengerParameter);
+            //}
+
+            //if (age != null)
+            //{
+            //    currentExpression = CreateExpression<decimal>(age.Value, currentExpression, "Age", passengerParameter);
+            //}
+
+            //if (minimumFare != null)
+            //{
+            //    currentExpression = CreateExpression<decimal>(minimumFare.Value, currentExpression, "Fare", passengerParameter, ">");
+            //}
+
+            //if (currentExpression != null)
+            //{
+            //    var expr = Expression.Lambda<Func<Passenger, bool>>(currentExpression, false, new List<ParameterExpression> { passengerParameter });
+            //    var func = expr.Compile();
+
+            //    this.query = expr.ToReadableString();
+
+            //    this.Passengers = this.Passengers.Where(func);
+            //}
+
+            //return this.Passengers;
         }
 
         /// <summary>
@@ -174,7 +306,7 @@
 
         public SexValue? ParseSex(string value)
         {
-             return value == "male" ? SexValue.Male : SexValue.Female;
+            return value == "male" ? SexValue.Male : SexValue.Female;
         }
 
         public bool? ParseSurvived(string value)
