@@ -1,7 +1,9 @@
 ﻿namespace TitanicExplorer.Pages
 {
+    using AgileObjects.ReadableExpressions;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using System.IO;
+    using System.Linq.Dynamic.Core;
     using System.Linq.Expressions;
     using TitanicExplorer.Data;
     using static TitanicExplorer.Data.Passenger;
@@ -182,55 +184,56 @@
 
             */
 
-            //Expression? currentExpression = null;
+            Expression? currentExpression = null;
+            //var passengerParameter = Expression.Parameter(typeof(Passenger), "passenger");
 
-            //if (!string.IsNullOrEmpty(this.query))
-            //{
-            //    var expr = DynamicExpressionParser.ParseLambda<Passenger, bool>(new ParsingConfig(), true, this.query);
+            if (!string.IsNullOrEmpty(this.query))
+            {
+                var expr = DynamicExpressionParser.ParseLambda<Passenger, bool>(new ParsingConfig(), true, this.query);
 
-            //    var func = expr.Compile();
+                var func = expr.Compile();
 
-            //    return this.Passengers.Where(func);
-            //}
+                return this.Passengers.Where(func);
+            }
 
-            //var passengerParameter = Expression.Parameter(typeof(Passenger));
+            var passengerParameter = Expression.Parameter(typeof(Passenger));
 
-            //if (survived != null)
-            //{
-            //    currentExpression = CreateExpression<bool>(survived.Value, null, "Survived", passengerParameter);
-            //}
+            if (survived != null)
+            {
+                currentExpression = CreateExpression<bool>(survived.Value, null, "Survived", passengerParameter);
+            }
 
-            //if (pClass != null)
-            //{
-            //    currentExpression = CreateExpression<int>(pClass.Value, currentExpression, "PClass", passengerParameter);
-            //}
+            if (pClass != null)
+            {
+                currentExpression = CreateExpression<int>(pClass.Value, currentExpression, "PClass", passengerParameter);
+            }
 
-            //if (sex != null)
-            //{
-            //    currentExpression = CreateExpression<SexValue>(sex.Value, currentExpression, "Sex", passengerParameter);
-            //}
+            if (sex != null)
+            {
+                currentExpression = CreateExpression<SexValue>(sex.Value, currentExpression, "Sex", passengerParameter);
+            }
 
-            //if (age != null)
-            //{
-            //    currentExpression = CreateExpression<decimal>(age.Value, currentExpression, "Age", passengerParameter);
-            //}
+            if (age != null)
+            {
+                currentExpression = CreateExpression<decimal>(age.Value, currentExpression, "Age", passengerParameter);
+            }
 
-            //if (minimumFare != null)
-            //{
-            //    currentExpression = CreateExpression<decimal>(minimumFare.Value, currentExpression, "Fare", passengerParameter, ">");
-            //}
+            if (minimumFare != null)
+            {
+                currentExpression = CreateExpression<decimal>(minimumFare.Value, currentExpression, "Fare", passengerParameter, ">");
+            }
 
-            //if (currentExpression != null)
-            //{
-            //    var expr = Expression.Lambda<Func<Passenger, bool>>(currentExpression, false, new List<ParameterExpression> { passengerParameter });
-            //    var func = expr.Compile();
+            if (currentExpression != null)
+            {
+                var expr = Expression.Lambda<Func<Passenger, bool>>(currentExpression, false, new List<ParameterExpression> { passengerParameter });
+                var func = expr.Compile();
 
-            //    this.query = expr.ToReadableString();
+                this.query = expr.ToReadableString();
 
-            //    this.Passengers = this.Passengers.Where(func);
-            //}
+                this.Passengers = this.Passengers.Where(func);
+            }
 
-            //return this.Passengers;
+            return this.Passengers;
         }
 
         /// <summary>
